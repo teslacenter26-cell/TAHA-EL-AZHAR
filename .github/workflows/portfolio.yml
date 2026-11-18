@@ -1,0 +1,54 @@
+name: Portfolio défensif
+on:
+  push:
+    branches: [portfolio-cyber]
+  pull_request:
+    branches: [portfolio-cyber]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verifier:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: portfolio
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: Tests et qualité
+        run: |
+          python3 -m compileall -q .
+          node --check web/app.js
+          python3 -m unittest -v
+          node --test verification/client.test.cjs
+      - name: Installer les outils isolés
+        run: |
+          python3 -m venv "$RUNNER_TEMP/controle"
+          "$RUNNER_TEMP/controle/bin/pip" install bandit==1.8.6 detect-secrets==1.5.0 pip-audit==2.9.0 playwright==1.55.0
+      - name: Analyse statique Python
+        run: '"$RUNNER_TEMP/controle/bin/bandit" -r analyse.py build.py preview.py -ll'
+      - name: Rechercher des secrets dans les fichiers suivis
+        working-directory: .
+        run: git ls-files -z | xargs -0 "$RUNNER_TEMP/controle/bin/detect-secrets-hook"
+      - name: Audit des dépendances applicatives
+        run: '"$RUNNER_TEMP/controle/bin/pip-audit" --disable-pip --no-deps -r requirements.txt'
+      - name: Valider les parcours dans Chrome
+        run: |
+          python3 preview.py &
+          serveur=$!
+          trap 'kill "$serveur"' EXIT
+          curl --retry 8 --retry-connrefused --retry-delay 1 -fsS http://127.0.0.1:8000/ -o /dev/null
+          "$RUNNER_TEMP/controle/bin/python" verification/navigateur.py
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: captures-du-laboratoire
+          path: portfolio/preuves/*.jpg
+      - name: Construire le livrable vérifié
+        run: python3 build.py
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: portfolio-public
+          path: portfolio/dist/

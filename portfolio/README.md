@@ -25,3 +25,21 @@ python -m unittest -v
 La première commande affiche deux alertes classées par heure UTC. La seconde vérifie notamment la borne de dix minutes, le regroupement par compte et par adresse, et l’exclusion des échecs postérieurs à une réussite.
 
 Les données, les comptes et le contexte d’enquête sont fictifs. Les étiquettes de scénario servent uniquement à évaluer la règle après son exécution.
+
+## Portfolio web et laboratoire interactif
+
+[Rapport de livraison et état des dix projets](RAPPORT.md) · [Architecture](ARCHITECTURE.md) · [Audit initial](AUDIT.md)
+
+Depuis la racine du dépôt sur la branche portfolio-cyber, avec Python 3.11+ et Node 20+ pour les tests client :
+
+```sh
+cd portfolio
+python -m unittest -v
+python build.py
+node --test verification/client.test.cjs
+python preview.py
+```
+
+Ouvrir http://127.0.0.1:8000/ pour voir les résultats SQL, comparer une empreinte ou examiner des en-têtes. Aucune installation de paquet applicatif. Le formulaire de contact ouvre un brouillon local.
+
+[Publier la version vérifiée](DEPLOYMENT.md) · [Sécurité et signalement](SECURITY.md) · [Contribuer](CONTRIBUTING.md) · [Checklist de livraison](SECURITY-CHECKLIST.md) · [Historique](CHANGELOG.md)
